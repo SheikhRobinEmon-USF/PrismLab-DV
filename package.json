@@ -1,0 +1,52 @@
+{
+  "name": "prismlab-dv",
+  "version": "1.0.0",
+  "description": "Local-first interactive data visualization and evidence-backed storytelling studio.",
+  "scripts": {
+    "test": "tsx --test tests/*.test.ts",
+    "dev": "next dev",
+    "build": "next build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "prebuild": "node scripts/assets.mjs",
+    "predev": "node scripts/assets.mjs",
+    "e2e": "playwright test",
+    "preview": "node scripts/serve.mjs",
+    "postbuild": "node scripts/offline.mjs",
+    "benchmark": "node scripts/benchmark.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SheikhRobinEmon-USF/PrismLab-DV.git"
+  },
+  "license": "MIT",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/SheikhRobinEmon-USF/PrismLab-DV/issues"
+  },
+  "homepage": "https://github.com/SheikhRobinEmon-USF/PrismLab-DV#readme",
+  "private": true,
+  "dependencies": {
+    "@duckdb/duckdb-wasm": "1.33.1-dev57.0",
+    "echarts": "^6.1.0",
+    "next": "^16.4.6",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.1",
+    "@duckdb/node-api": "^2.0.1-r.1",
+    "@playwright/test": "^1.65.1",
+    "@types/node": "^26.6.11",
+    "@types/react": "^19.3.3",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.4.6",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

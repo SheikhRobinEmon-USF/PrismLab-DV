@@ -155,3 +155,12 @@ vite.config.ts.timestamp-*
 .nx/cache
 .nx/workspace-data
 .nx/migrate-runs
+
+/node_modules/
+/.next/
+/out/
+/public/engine/
+/playwright-report/
+/test-results/
+*.tsbuildinfo
+next-env.d.ts

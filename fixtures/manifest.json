@@ -1,0 +1,27 @@
+{
+  "retail": {
+    "file": "../public/retail.csv",
+    "sha256": "e4637651f1894c2940de956d88b1d871a06c10ec5c2a704d47d0ab61a5543344",
+    "source": "PrismLab-generated synthetic retail data",
+    "license": "CC0-1.0",
+    "expectedRows": 96,
+    "expectedSalesUsd": 1568472
+  },
+  "earthquakes": {
+    "file": "../public/earthquakes.parquet",
+    "sha256": "7326fa0258798a57f68ddd223fad447177a4ffc4da6eac80c502a7473fcd9228",
+    "csv": "usgs-january-2024.csv",
+    "csvSha256": "6e3713b1f49e1cb31864538bfa7e85f729669c995eb2c776db7d429b22d64fef",
+    "source": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv&starttime=2024-01-01&endtime=2024-02-01&minmagnitude=5&orderby=time-asc",
+    "license": "US government public domain",
+    "licenseReference": "https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits",
+    "preparation": "Select time, latitude, longitude, depth, mag, place and status. Store columns as original text for consistent browser profiling."
+  },
+  "land": {
+    "file": "../public/land.geojson",
+    "sha256": "9e0729ee253ca7d7a5c4ae9395fb1902264c5377c52e224d13dd85010e2835d9",
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_land.geojson",
+    "license": "Public domain",
+    "licenseReference": "https://www.naturalearthdata.com/about/terms-of-use/"
+  }
+}
