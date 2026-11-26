@@ -2,6 +2,8 @@
 
 Grid Atlas is the home page. It is an interactive research dashboard based on Ember’s annual electricity generation data, with a linked trend chart, generation mix, map, rankings, annual change chart, timeline playback, data documentation and source CSV export. The dataset studio remains at `/studio/`.
 
+The Grid Atlas production build and all 14 Chromium tests passed locally and in [GitHub CI](https://github.com/SheikhRobinEmon-USF/PrismLab-DV/actions/runs/45910828580). The dashboard tests cover playback, year picking directly on the trend, economy and region filtering, the map, CSV export, a keyboard-accessible methodology dialog, and axe checks at widths of 320, 768 and 1440 pixels.
+
 [Research and provenance](docs/grid-research.md) · [Desktop preview](docs/screenshots/grid-atlas.webp) · [Mobile preview](docs/screenshots/grid-atlas-mobile.webp)
 
 ## Dataset studio
