@@ -6,6 +6,8 @@ The Grid Atlas production build and all 14 Chromium tests passed locally and in 
 
 [Research and provenance](docs/grid-research.md) · [Desktop preview](docs/screenshots/grid-atlas.webp) · [Mobile preview](docs/screenshots/grid-atlas-mobile.webp)
 
+The production export is also committed at the root for the repository’s current branch-based GitHub Pages source. The workflow upload and deployment succeeded, but the public URL continued serving the legacy README build. The root snapshot lets the configured branch deployment serve the dashboard.
+
 ## Dataset studio
 
 ## Implementation

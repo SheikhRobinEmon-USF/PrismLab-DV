@@ -11,7 +11,7 @@
 - Explore the map or rank economies by generation, clean share, or five-year change. Selecting an economy updates the metrics, timeline, mix and year-over-year chart.
 - Open **Methodology** for definitions and coverage, or export the selected economy’s full time series as CSV.
 
-[Research notes](docs/grid-research.md) · [Mobile preview](docs/screenshots/grid-atlas-mobile.webp) · [Ember Yearly Electricity Data](https://ember-energy.org/data/yearly-electricity-data/)
+[Open Grid Atlas](https://sheikhrobinemon-usf.github.io/PrismLab-DV/) · [Research notes](docs/grid-research.md) · [Mobile preview](docs/screenshots/grid-atlas-mobile.webp) · [Ember Yearly Electricity Data](https://ember-energy.org/data/yearly-electricity-data/)
 
 ## Run locally
 
@@ -33,4 +33,4 @@ npx playwright install chromium
 NEXT_PUBLIC_BASE_PATH=/PrismLab-DV npm run e2e
 ```
 
-The production export is served under `/PrismLab-DV/` on GitHub Pages. Set **Settings → Pages → Source** to **GitHub Actions** to use the repository’s deployment workflow.
+The production export is served under `/PrismLab-DV/` on GitHub Pages. The checked-in root HTML, `_next/` assets and route folders are the release snapshot for the repository’s branch-based Pages configuration. The application source is in `app/`, `src/` and `public/`. Set **Settings → Pages → Source** to **GitHub Actions** to publish subsequent exports directly through the deployment workflow.
