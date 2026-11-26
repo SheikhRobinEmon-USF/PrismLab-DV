@@ -1,0 +1,326 @@
+"use client";
+
+import dynamic from "next/dynamic";
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  ArrowDown, ArrowDownToLine, ArrowDownRight, ArrowRight, ArrowUpRight, ChartNoAxesCombined,
+  ChevronDown, CircleHelp, Factory, Globe2, Leaf, List, Map, Pause, Play, Wind, X, Zap,
+} from "lucide-react";
+import { asset } from "../assets";
+import {
+  annualChanges, downloadArea, firstYear, getMix, number, observation, percent, rankAreas, recentYear, signed,
+  whole, world, type Area, type Metric, type Row, type Unit,
+} from "./data";
+import "./dashboard.css";
+
+const Timeline = dynamic(() => import("./charts").then(module => module.Timeline), {
+  ssr: false, loading: () => <div className="grid-timeline grid-chart-loading" role="status">Loading chart…</div>,
+});
+const MixChart = dynamic(() => import("./charts").then(module => module.MixChart), {
+  ssr: false, loading: () => <div className="grid-donut grid-chart-loading" role="status">Loading chart…</div>,
+});
+const WorldMap = dynamic(() => import("./charts").then(module => module.WorldMap), {
+  ssr: false, loading: () => <div className="grid-map grid-chart-loading" role="status">Loading map…</div>,
+});
+
+const SOURCE = "https://ember-energy.org/data/yearly-electricity-data/";
+const REPORT = "https://ember-energy.org/latest-insights/global-electricity-review-2026/";
+const METHOD = "https://files.ember-energy.org/public-downloads/ember_electricity_data_methodology.pdf";
+const continents = ["Africa", "Asia", "Europe", "North America", "South America", "Oceania"];
+const metrics: Record<Metric, string> = { generation: "Total generation", clean: "Clean share", change: "5-year clean share change" };
+
+function Select({ label, value, choose, children, icon }: {
+  label: string; value: string | number; choose: (value: string) => void; children: ReactNode; icon?: ReactNode;
+}) {
+  return <span className={"grid-select" + (icon ? " with-icon" : "")}>{icon}
+    <select aria-label={label} value={value} onChange={event => choose(event.target.value)}>{children}</select><ChevronDown />
+  </span>;
+}
+
+function Segment({ active, label, onClick, children }: { active: boolean; label?: string; onClick: () => void; children: ReactNode }) {
+  return <button type="button" aria-pressed={active} aria-label={label} onClick={onClick}>{children}</button>;
+}
+
+function Delta({ value, suffix, digits = 1 }: { value?: number; suffix: string; digits?: number }) {
+  if (value === undefined) return <span className="grid-delta neutral">No prior-year data</span>;
+  return <span className={"grid-delta " + (value > 0 ? "up" : value < 0 ? "down" : "neutral")}>
+    {value > 0 ? <ArrowUpRight aria-hidden /> : value < 0 ? <ArrowDownRight aria-hidden /> : null}
+    {signed(value, digits)}{suffix}<span className="grid-delta-period"> vs prior year</span>
+  </span>;
+}
+
+function OverviewMetrics({ row, prior }: { row?: Row; prior?: Row }) {
+  const flowDelta = row && prior && prior[1] ? 100 * (row[1] / prior[1] - 1) : undefined;
+  const shareDelta = (index: 2 | 3 | 4) => row && prior && row[index] != null && prior[index] != null
+    ? percent(row[index], row[1]) - percent(prior[index], prior[1]) : undefined;
+  const share = (index: 2 | 3 | 4) => row && row[index] !== null ? number(percent(row[index], row[1])) : "—";
+  const cards = [
+    { name: "Total generation", value: row ? whole(row[1]) : "—", unit: "TWh", delta: flowDelta, suffix: "%", icon: Zap, tone: "blue" },
+    { name: "Clean electricity", value: share(2), unit: "%", delta: shareDelta(2), suffix: " pp", icon: Leaf, tone: "green" },
+    { name: "Fossil electricity", value: share(3), unit: "%", delta: shareDelta(3), suffix: " pp", icon: Factory, tone: "orange" },
+    { name: "Wind and solar", value: share(4), unit: "%", delta: shareDelta(4), suffix: " pp", icon: Wind, tone: "teal" },
+  ];
+  return <div className="grid-metrics" aria-label="Electricity metrics">
+    {cards.map(({ name, value, unit, delta, suffix, icon: Icon, tone }, index) => <article className="grid-metric" key={name} data-tone={tone}>
+      <div className="grid-metric-label"><span className="grid-metric-icon"><Icon size={17} aria-hidden /></span><h2>{name}</h2></div>
+      <div className="grid-metric-value" key={value} style={{ animationDelay: index * 28 + "ms" }}>{value}<span>{unit}</span></div>
+      <Delta value={delta} suffix={suffix} />
+    </article>)}
+  </div>;
+}
+
+function SourceMix({ row, year }: { row?: Row; year: number }) {
+  const [fuel, setFuel] = useState<string | null>(null);
+  const mix = row ? getMix(row) : [];
+  const active = mix.find(item => item.name === fuel && item.value != null);
+  const choose = (name: string) => setFuel(previous => previous === name ? null : name);
+  return <section className="grid-panel grid-mix-panel" aria-labelledby="grid-mix-title">
+    <div className="grid-panel-head"><div><h2 id="grid-mix-title">Generation mix</h2><p>Electricity generated by source</p></div><span className="grid-year-tag">{year}</span></div>
+    {row ? <>
+      <div className="grid-donut-wrap">
+        <MixChart row={row} fuel={active?.name ?? null} choose={choose} />
+        <div className="grid-donut-caption" key={active?.name ?? "total"}>
+          <strong>{active?.value != null ? number(percent(active.value, row[1])) + "%" : whole(row[1])}</strong>
+          <span>{active ? active.name : "TWh generated"}</span>
+        </div>
+      </div>
+      <ul className="grid-fuel-list" aria-label="Generation by source">
+        {mix.filter(item => item.value != null && item.value > 0).map(item => <li key={item.name}>
+          <button type="button" aria-pressed={active?.name === item.name} onClick={() => choose(item.name)}>
+            <i style={{ backgroundColor: item.color }} aria-hidden /><span>{item.name}</span><strong>{number(percent(item.value!, row[1]))}%</strong>
+          </button>
+        </li>)}
+      </ul>
+    </> : <p className="grid-empty">Generation data is unavailable for this place and year.</p>}
+  </section>;
+}
+
+function Trend({ area, row, year, selectYear }: { area: Area; row?: Row; year: number; selectYear: (year: number) => void }) {
+  const [unit, setUnit] = useState<Unit>("share");
+  const [enabled, setEnabled] = useState(["clean", "fossil"]);
+  const clean = row && percent(row[2], row[1]);
+  const fossil = row && percent(row[3], row[1]);
+  const legend = [
+    { id: "clean", title: "Clean", color: "var(--grid-accent)", share: clean, amount: row?.[2] },
+    { id: "fossil", title: "Fossil", color: "var(--grid-orange)", share: fossil, amount: row?.[3] },
+  ];
+  function toggle(id: string) {
+    setEnabled(previous => previous.includes(id) ? previous.length > 1 ? previous.filter(value => value !== id) : previous : [...previous, id]);
+  }
+  return <section className="grid-panel grid-trend" aria-labelledby="grid-trend-title">
+    <div className="grid-panel-head"><div><h2 id="grid-trend-title">Clean vs. fossil power</h2><p>{area.name} · {unit === "share" ? "Share of total generation" : "Generation in terawatt-hours"}</p></div>
+      <div className="grid-segment" aria-label="Chart display">
+        <Segment active={unit === "share"} onClick={() => setUnit("share")}>Share</Segment>
+        <Segment active={unit === "twh"} onClick={() => setUnit("twh")}>TWh</Segment>
+      </div>
+    </div>
+    <div className="grid-legend" aria-label="Trend series">
+      {legend.map(item => <button key={item.id} type="button" aria-pressed={enabled.includes(item.id)} onClick={() => toggle(item.id)}>
+        <i style={{ background: item.color }} aria-hidden /><span>{item.title}</span>
+        <strong>{item.share === undefined ? "—" : unit === "share" ? number(item.share) + "%" : whole(item.amount!) + " TWh"}</strong>
+      </button>)}
+    </div>
+    <Timeline area={area} row={row} year={year} unit={unit} enabled={enabled} choose={selectYear} />
+    <div className="grid-chart-note">
+      <ChartNoAxesCombined size={16} aria-hidden />
+      {clean !== undefined && fossil !== undefined
+        ? <span><strong>{number(Math.abs(clean - fossil))} pp</strong> {clean >= fossil ? "clean lead" : "fossil lead"} in {year}</span>
+        : <span>{year} has no published observation for {area.name}.</span>}
+    </div>
+  </section>;
+}
+
+function Rankings({ areas, activeCode, year, choose, loadError }: {
+  areas: Area[]; activeCode: string; year: number; choose: (code: string) => void; loadError: boolean;
+}) {
+  const [metric, setMetric] = useState<Metric>("generation");
+  const [continent, setContinent] = useState("");
+  const [view, setView] = useState<"ranks" | "map">("ranks");
+  const ranking = useMemo(() => rankAreas(areas, year, metric, continent), [areas, year, metric, continent]);
+  const observationCount = useMemo(() => rankAreas(areas, year, "generation", continent).length, [areas, year, continent]);
+  const mapData = useMemo(() => rankAreas(areas, year, "clean", continent)
+    .map(item => ({ code: item.area.code, name: item.area.name, value: item.clean })), [areas, year, continent]);
+  const top = ranking.slice(0, 7);
+  const max = Math.max(1, ...top.map(item => Math.abs(item.value)));
+  const format = (value: number) => metric === "generation" ? whole(value) + " TWh" :
+    metric === "clean" ? number(value) + "%" : signed(value) + " pp";
+  return <section className="grid-panel grid-rank-panel" aria-labelledby="grid-ranks-title">
+    <div className="grid-panel-head"><div><h2 id="grid-ranks-title">Explore economies</h2><p>{observationCount} reporting in {year}</p></div>
+      <div className="grid-segment">
+        <Segment active={view === "ranks"} label="Rankings view" onClick={() => setView("ranks")}><List size={16} aria-hidden /><span>Rankings</span></Segment>
+        <Segment active={view === "map"} label="Map view" onClick={() => setView("map")}><Map size={15} aria-hidden /><span>Map</span></Segment>
+      </div>
+    </div>
+    <div className="grid-rank-controls">
+      <Select label="Region" value={continent} choose={setContinent}><option value="">All regions</option>{continents.map(name => <option key={name}>{name}</option>)}</Select>
+      {view === "ranks" && <Select label="Ranking metric" value={metric} choose={value => setMetric(value as Metric)}>
+        {Object.entries(metrics).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+      </Select>}
+    </div>
+    {!areas.length ? <p role="status" className="grid-empty">{loadError ? "Economy data could not load. The world data is still available." : "Loading economy data…"}</p> :
+      view === "map" ? <WorldMap data={mapData} selected={activeCode} choose={choose} /> :
+      top.length ? <ol className="grid-rank-list" aria-label="Ranked economies">
+        {top.map(({ area, value }, index) => <li key={area.code}>
+          <button type="button" aria-pressed={activeCode === area.code} onClick={() => choose(area.code)}>
+            <span className="grid-rank-number">{String(index + 1).padStart(2, "0")}</span>
+            <span className="grid-rank-name">{area.name}</span><strong>{format(value)}</strong><ArrowRight size={15} aria-hidden />
+            <span className="grid-rank-track" aria-hidden><i style={{ width: Math.abs(value) / max * 100 + "%" }} /></span>
+          </button>
+        </li>)}
+      </ol> : <p className="grid-empty">No comparable observations match this year and region.</p>}
+    <p className="grid-panel-foot">{view === "map" ? "Shading shows clean generation share. Grey indicates no mapped observation." :
+      metric === "change" ? "Change in clean share compared with the same place five years earlier." :
+      "Select an economy to update the dashboard."}</p>
+  </section>;
+}
+
+function Drivers({ row, prior, year, name }: { row?: Row; prior?: Row; year: number; name: string }) {
+  const changes = row && prior ? annualChanges(row, prior) : [];
+  const max = Math.max(1, ...changes.map(fuel => Math.abs(fuel.value)));
+  const total = row && prior ? row[1] - prior[1] : null;
+  return <section className="grid-panel grid-drivers" aria-labelledby="grid-drivers-title">
+    <div className="grid-panel-head"><div><h2 id="grid-drivers-title">What drove the change?</h2><p>{name} · {year} vs. {year - 1}</p></div>
+      {total !== null && <span className="grid-year-tag">{signed(total, 0)} TWh total</span>}
+    </div>
+    {changes.length ? <>
+      <div className="grid-change-scale" aria-hidden><span>Decrease</span><span>Increase</span></div>
+      <ul className="grid-change-list" key={year + name} aria-label="Year-over-year change in generation by source">
+        {changes.map(fuel => <li key={fuel.name}><span>{fuel.name}</span>
+          <span className="grid-change-track" aria-hidden><i style={{
+            "--bar": Math.abs(fuel.value) / max * 50 + "%",
+            "--fuel-color": fuel.color, "--side": fuel.value < 0 ? "right" : "left",
+          } as React.CSSProperties} data-negative={fuel.value < 0} /></span>
+          <strong>{signed(fuel.value, 1)}</strong>
+        </li>)}
+      </ul><p className="grid-panel-foot">Change in electricity generation, measured in TWh.</p>
+    </> : <p className="grid-empty">A year-over-year comparison requires data for both years.</p>}
+  </section>;
+}
+
+export default function Dashboard() {
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [loadError, setLoadError] = useState(false);
+  const [code, setCode] = useState(world.code);
+  const [year, setYear] = useState(recentYear);
+  const [playing, setPlaying] = useState(false);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const area = areas.find(item => item.code === code) ?? world;
+  const row = observation(area, year);
+  const prior = observation(area, year - 1);
+  const latestInArea = area.rows.at(-1)![0];
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetch(asset("grid/countries.json"), { signal: controller.signal }).then(response => {
+      if (!response.ok) throw new Error("Economy data unavailable.");
+      return response.json() as Promise<Area[]>;
+    }).then(setAreas).catch(() => { if (!controller.signal.aborted) setLoadError(true); });
+    return () => controller.abort();
+  }, []);
+  useEffect(() => {
+    if (!playing) return;
+    const timer = window.setTimeout(() => {
+      if (year >= latestInArea) setPlaying(false);
+      else setYear(year + 1);
+    }, 550);
+    return () => clearTimeout(timer);
+  }, [playing, year, latestInArea]);
+  const selectYear = (next: number) => { setPlaying(false); setYear(next); };
+  const selectArea = (next: string) => { setPlaying(false); setCode(next); };
+  function togglePlay() {
+    if (playing) { setPlaying(false); return; }
+    if (year >= latestInArea || year < area.rows[0][0]) setYear(area.rows[0][0]);
+    setPlaying(true);
+  }
+  const openMethod = () => dialog.current?.showModal();
+  const worldLatest = world.rows.at(-1)!;
+  const worldPrior = world.rows.at(-2)!;
+  const globalCleanGrowth = worldLatest[2] - worldPrior[2];
+  const globalFossilDelta = worldLatest[3] - worldPrior[3];
+  const leadingGain = annualChanges(worldLatest, worldPrior).find(fuel => fuel.value > 0);
+  return <div className="grid-atlas" id="overview">
+    <a className="grid-skip" href="#grid-main">Skip to dashboard</a>
+    <header className="grid-header">
+      <div className="grid-layout grid-header-inner">
+        <a href="#overview" className="grid-brand"><span><Zap size={20} fill="currentColor" aria-hidden /></span><strong>Grid Atlas</strong></a>
+        <nav aria-label="Dashboard navigation">
+          <a href="#overview">Overview</a><a href="#explore">Explore</a><button type="button" onClick={openMethod}>Methodology</button>
+        </nav>
+        <button type="button" className="grid-source-button" onClick={openMethod}><CircleHelp size={16} aria-hidden /> <span>Data sources</span></button>
+      </div>
+    </header>
+    <main id="grid-main" className="grid-layout grid-main">
+      <section className="grid-hero" style={{ "--grid-image": `url("${asset("grid/hero.webp")}")` } as React.CSSProperties}>
+        <div className="grid-hero-content">
+          <p className="grid-overline"><span aria-hidden /> Electricity · {firstYear}–{recentYear}</p>
+          <h1>The global power<br className="grid-hero-break" /> <em>transition.</em></h1>
+          <p className="grid-hero-description">Where is clean electricity replacing fossil power? Explore how generation has changed across the world.</p>
+          <a className="grid-hero-link" href="#dashboard">Explore the data <ArrowDown size={16} aria-hidden /></a>
+        </div>
+      </section>
+
+      <section id="dashboard" className="grid-dashboard" aria-label="Electricity dashboard">
+        <div className="grid-toolbar">
+          <div className="grid-toolbar-main">
+            <Select label="Geography" value={area.code} choose={selectArea} icon={<Globe2 />}>
+              <option value={world.code}>World</option>{areas.map(item => <option key={item.code} value={item.code}>{item.name}</option>)}
+            </Select>
+            <Select label="Year" value={year} choose={value => selectYear(+value)}>
+              {world.rows.toReversed().map(entry => <option key={entry[0]} value={entry[0]}>{entry[0]}</option>)}
+            </Select>
+          </div>
+          <div className="grid-time-control">
+            <button className="grid-play" type="button" onClick={togglePlay} aria-label={playing ? "Pause timeline" : "Play timeline"}>
+              {playing ? <Pause size={15} fill="currentColor" aria-hidden /> : <Play size={14} fill="currentColor" aria-hidden />}
+            </button>
+            <span>{firstYear}</span>
+            <input type="range" aria-label="Timeline year" min={firstYear} max={recentYear} value={year}
+              style={{ "--progress": (year - firstYear) / (recentYear - firstYear) * 100 + "%" } as React.CSSProperties}
+              onChange={event => selectYear(+event.target.value)} />
+            <span>{recentYear}</span>
+          </div>
+          <button type="button" className="grid-export" onClick={() => downloadArea(area)}><ArrowDownToLine size={16} aria-hidden /> <span>Export CSV</span></button>
+        </div>
+        {!row && <p className="grid-data-warning" role="status">Ember has no observation for {area.name} in {year}.
+          <button type="button" onClick={() => selectYear(latestInArea)}>Use {latestInArea}</button>
+        </p>}
+        <OverviewMetrics row={row} prior={prior} />
+        <div className="grid-primary-charts">
+          <Trend area={area} row={row} year={year} selectYear={selectYear} />
+          <SourceMix row={row} year={year} />
+        </div>
+      </section>
+      <div id="explore" className="grid-secondary-charts">
+        <Rankings areas={areas} activeCode={area.code} year={year} choose={selectArea} loadError={loadError} />
+        <Drivers row={row} prior={prior} year={year} name={area.name} />
+      </div>
+      {leadingGain && <aside className="grid-insight">
+        <span className="grid-insight-icon"><Zap size={22} fill="currentColor" aria-hidden /></span>
+        <div><h2>{leadingGain.name} drove the biggest gain in {recentYear}</h2>
+          <p>Globally, {leadingGain.name.toLowerCase()} added {whole(leadingGain.value)} TWh. Clean generation changed by {signed(globalCleanGrowth, 0)} TWh and fossil generation by {signed(globalFossilDelta, 0)} TWh.</p></div>
+        <a href={REPORT} target="_blank" rel="noreferrer">Read Ember’s analysis <ArrowUpRight size={17} aria-hidden /></a>
+      </aside>}
+    </main>
+    <footer className="grid-layout grid-footer">
+      <span>Grid Atlas · A PrismLab project</span><a href={SOURCE} target="_blank" rel="noreferrer">Data by Ember · CC BY 4.0 <ArrowUpRight size={14} aria-hidden /></a>
+      <Link href="/studio/">Open dataset studio <ArrowRight size={15} aria-hidden /></Link>
+    </footer>
+    <dialog ref={dialog} className="grid-dialog" aria-labelledby="grid-dialog-title" onClick={event => {
+      if (event.target === event.currentTarget) dialog.current?.close();
+    }}>
+      <div className="grid-dialog-inner">
+        <div className="grid-panel-head"><h2 id="grid-dialog-title">Data and methodology</h2>
+          <button type="button" aria-label="Close methodology" onClick={() => dialog.current?.close()}><X size={20} aria-hidden /></button></div>
+        <p>Grid Atlas uses Ember’s Yearly Electricity Data, updated on 17 November 2026. The dashboard covers electricity generation from {firstYear} through {recentYear}.</p>
+        <dl>
+          <dt>Clean and fossil generation</dt><dd>Clean combines renewables and nuclear. Fossil includes coal, gas and other fossil sources. Shares divide generation by the total for the same place and year.</dd>
+          <dt>Year-over-year changes</dt><dd>Shares change in percentage points (pp). Generation changes are measured in TWh, except the total-generation KPI, which uses a relative percent change.</dd>
+          <dt>Coverage</dt><dd>Some places have gaps or report later than others. Missing years are excluded from rankings, and the world series is Ember’s published aggregate. Map boundaries are from Natural Earth.</dd>
+        </dl>
+        <div className="grid-method-links"><a href={SOURCE} target="_blank" rel="noreferrer">Ember dataset <ArrowUpRight size={15} aria-hidden /></a>
+          <a href={METHOD} target="_blank" rel="noreferrer">Source methodology <ArrowUpRight size={15} aria-hidden /></a></div>
+      </div>
+    </dialog>
+  </div>;
+}

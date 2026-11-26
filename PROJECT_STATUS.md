@@ -1,5 +1,11 @@
 # PrismLab project status
 
+Grid Atlas is the home page. It is an interactive research dashboard based on Ember’s annual electricity generation data, with a linked trend chart, generation mix, map, rankings, annual change chart, timeline playback, data documentation and source CSV export. The dataset studio remains at `/studio/`.
+
+[Research and provenance](docs/grid-research.md) · [Desktop preview](docs/screenshots/grid-atlas.webp) · [Mobile preview](docs/screenshots/grid-atlas-mobile.webp)
+
+## Dataset studio
+
 ## Implementation
 
 - M0 · Next.js static export, responsive theme, original chart-based gallery, CI and Pages workflows, fixtures and architecture notes.
@@ -8,7 +14,7 @@
 - M3 · Line, bar, scatter, histogram, heatmap and map; linked selection; adjustable time windows; baseline comparison; keyboard-accessible chart data.
 - M4 · Storyboard editing, presentation, revision-aware evidence, IndexedDB save/restore, and portable project, chart, aggregate and story exports.
 - M5 · SQL golden tests, Chromium workflows, keyboard and reduced-motion checks, axe on the gallery at four widths, and browser benchmarks. [Measurements](docs/performance.md)
-- M6 · Static route export, walkthrough, screenshots, case study, deployment workflow. GitHub Pages requires the repository's Pages source to be set to GitHub Actions. The current credential's Pages configuration request returned HTTP 403.
+- M6 · Static route export, walkthrough, screenshots, case study, deployment workflow. GitHub Pages requires the repository's Pages source to be set to GitHub Actions.
 
 ## Verification
 
@@ -16,6 +22,6 @@ The clean-checkout run passed `npm ci`, `npm run lint`, `npm run typecheck`, all
 
 All nine Chromium tests passed on the production export. They cover CSV and Parquet, malformed input, chart variants, keyboard time-window selection, linked records, storyboard revision changes, reload, JSON round trip, offline restore and all download formats. The responsive checks used widths of 320, 375, 768 and 1440 pixels. The gallery and the 320-pixel linked view passed the tested axe WCAG rules.
 
-The GitHub Pages URL is pending activation. Safari, Lighthouse and multi-device performance remain unverified. Commands are in the [README](README.md#verification-and-deployment).
+Safari, Lighthouse and multi-device performance remain unverified. Commands are in the [README](README.md#verification-and-deployment).
 
 The full first-run asset bundle includes two DuckDB-Wasm variants. A browser loads the variant it supports. Large and wide data may hit browser memory limits before the documented import caps.

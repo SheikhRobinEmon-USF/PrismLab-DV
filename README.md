@@ -1,42 +1,28 @@
-# PrismLab
+# Grid Atlas
 
-PrismLab is a browser-based studio for exploring datasets and telling stories with evidence. Select a chart point to see the contributing records, or add the chart and its exact query to a storyboard.
+**Where is clean electricity replacing fossil power?** Grid Atlas is PrismLab’s interactive electricity dashboard. It tracks how the generation mix changed between 2000 and 2025 across the world and 209 economies, using open data from Ember.
 
-![PrismLab linked analysis with monthly retail sales and source evidence](docs/screenshots/linked-analysis.png)
+![Grid Atlas desktop dashboard with electricity indicators, trend, source mix, rankings and growth drivers](docs/screenshots/grid-atlas.webp)
+
+## Explore the data
+
+- Set an economy and year, scrub or play the timeline, or select a year directly on the trend chart.
+- Switch the trend between percentage share and TWh. Toggle clean or fossil generation, then select a source on the mix chart to see its share.
+- Explore the map or rank economies by generation, clean share, or five-year change. Selecting an economy updates the metrics, timeline, mix and year-over-year chart.
+- Open **Methodology** for definitions and coverage, or export the selected economy’s full time series as CSV.
+
+[Research notes](docs/grid-research.md) · [Mobile preview](docs/screenshots/grid-atlas-mobile.webp) · [Ember Yearly Electricity Data](https://ember-energy.org/data/yearly-electricity-data/)
 
 ## Run locally
 
-Requires Node.js 22 or later and curl. Node.js 24 is used in CI.
+Requires Node.js 22+ and curl. The dashboard uses Next.js App Router, React, TypeScript and ECharts. It runs as a static export with locally served fonts and data.
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Open http://localhost:3000. A production build also works with a static file server.
-
-```sh
-npm run build
-npm run preview
-```
-
-## Walkthrough
-
-1. Load the retail demo or import CSV or Parquet. **Datasets** shows inferred types, missing and invalid values, and source previews. Use the USGS demo for geographic coordinates.
-2. In **Chart composer**, choose a measure, aggregation, and one of six chart types. Set a time grain or add filters. Histogram uses a numeric X field. Map requires latitude and longitude columns.
-3. In **Linked analysis**, select a chart point or a row in the Chart data table. The evidence inspector, contributing-rows chart, and underlying records update. Apply a time window or capture a baseline to compare a second filter state.
-4. Add a chart to **Storyboard**. Write a claim, caveat, and alternative interpretation, then present the cards or revisit the evidence behind them.
-5. In **Export & provenance**, save to IndexedDB or download a project JSON, chart PNG/SVG, aggregate CSV, or self-contained story HTML. Import the JSON to reproduce the workspace.
-
-[Gallery](docs/screenshots/gallery.png) · [Mobile composer](docs/screenshots/mobile-composer.png) · [Case study](docs/case-study.md) · [Architecture](docs/architecture.md) · [Project status](PROJECT_STATUS.md)
-
-## Data and limits
-
-The examples are a fictional retail CSV and a curated January 2024 USGS earthquake snapshot. [The data manifest](fixtures/manifest.json) records sources, licenses, and checksums. To rebuild the Parquet snapshot from the included source CSV, install Python DuckDB 2.0.1 and run `python scripts/prepare-fixtures.py`. The basemap is Natural Earth.
-
-Local files stay in the browser. The app limits files to 30 MiB, 80 columns, and 1,000,000 rows. Browser memory may limit dense or heavily compressed Parquet before those caps. Chart and evidence table limits are described in the [architecture notes](docs/architecture.md). Blank strings are treated as missing, column distinct counts are approximate, and duplicate source labels use DuckDB's normalized labels. IndexedDB holds one saved workspace per browser profile. Offline access depends on a prior online visit and available browser storage.
-
-## Verification and deployment
+Open http://localhost:3000. [The original PrismLab dataset workspace](docs/studio.md) is available at `/studio/`.
 
 ```sh
 npm run lint
@@ -47,4 +33,4 @@ npx playwright install chromium
 NEXT_PUBLIC_BASE_PATH=/PrismLab-DV npm run e2e
 ```
 
-To deploy this repository, set **Settings → Pages → Source** to **GitHub Actions**. The Pages workflow builds the static export for `/PrismLab-DV` and deploys after successful verification on `main`. It can also be dispatched manually.
+The production export is served under `/PrismLab-DV/` on GitHub Pages. Set **Settings → Pages → Source** to **GitHub Actions** to use the repository’s deployment workflow.

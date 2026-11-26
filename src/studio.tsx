@@ -45,7 +45,7 @@ function Home({ example }: { example?: Demo }) {
     const demo = demos[example];
     return <>
       <section className="hero example-hero">
-        <div><Link className="text-link" href="/">All examples</Link><h1>{demo.name}</h1><p>{demo.description}</p>
+        <div><Link className="text-link" href="/studio/">All examples</Link><h1>{demo.name}</h1><p>{demo.description}</p>
           <button className="primary" disabled={!!busy} onClick={() => void openDemo(example)}>Load example</button>
           {project?.dataset.name === demo.name && <Link className="button" href={studioHref("explore")}>Explore dataset</Link>}
         </div>
@@ -312,8 +312,8 @@ export default function Studio({ section, example }: { section: Section | "home"
   return <>
     <a className="skip-link" href="#main">Skip to content</a>
     <header className="topbar">
-      <Link className="brand" href="/" aria-label="PrismLab home"><span className="brand-mark" aria-hidden="true">◈</span>PrismLab</Link>
-      <nav aria-label="Main navigation"><Link href="/" aria-current={section === "home" ? "page" : undefined}>Gallery</Link>
+      <Link className="brand" href="/studio/" aria-label="PrismLab home"><span className="brand-mark" aria-hidden="true">◈</span>PrismLab</Link>
+      <nav aria-label="Main navigation"><Link href="/studio/" aria-current={section === "home" ? "page" : undefined}>Gallery</Link>
         <Link href={studioHref("datasets")} aria-current={!gallery ? "page" : undefined}>Studio</Link></nav>
       <button className="theme" aria-pressed={dark} onClick={() => setDark(!dark)}>{dark ? "Light theme" : "Dark theme"}</button>
     </header>
@@ -331,7 +331,7 @@ export default function Studio({ section, example }: { section: Section | "home"
         {gallery ? <Home example={example} /> : <>
           <div className="page-header"><h1>{sections[section]}</h1>{project && <p>{project.dataset.name}</p>}</div>
           {section === "datasets" ? <DatasetView /> : !project ? <div className="panel"><h2>Open a dataset to continue</h2>
-            <p>Load an example or bring your own local file.</p><Link className="button primary" href="/">Open gallery</Link></div> :
+            <p>Load an example or bring your own local file.</p><Link className="button primary" href="/studio/">Open gallery</Link></div> :
             section === "story" ? <Storyboard /> : section === "export" ? <Exports /> : <Analysis explore={section === "explore"} />}
           {!project && section === "datasets" && <div className="panel"><h2>Try an example</h2><div className="button-row">
             <button disabled={!!busy} onClick={() => void openDemo("retail")}>Load retail demo</button>

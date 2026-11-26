@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 test("retail workspace, linked selection, saved story and export", async ({ page }) => {
-  await page.goto("./");
+  await page.goto("studio/");
   await page.getByRole("button", { name: "Load retail demo" }).click();
   await expect(page.getByText("Retail performance loaded.")).toBeVisible();
   await page.getByRole("link", { name: "Resume workspace" }).click();
@@ -65,7 +65,7 @@ for (const width of [320, 375, 768, 1440]) {
   test("responsive gallery and keyboard at " + width, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto("./");
+    await page.goto("studio/");
     await page.keyboard.press("Tab");
     await expect(page.getByRole("link", { name: "Skip to content" })).toBeFocused();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);

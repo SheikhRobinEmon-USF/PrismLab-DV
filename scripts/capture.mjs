@@ -6,7 +6,7 @@ const browser = await chromium.launch({ executablePath: process.env.PRISMLAB_CHR
 try {
   await mkdir("docs/screenshots", { recursive: true });
   const page = await browser.newPage({ viewport: { width: 1440, height: 1050 } });
-  await page.goto(url);
+  await page.goto(url + "studio/");
   await page.getByRole("heading", { name: /Make your data/ }).waitFor();
   await page.screenshot({ path: "docs/screenshots/gallery.png" });
   await page.getByRole("button", { name: "Load retail demo" }).click();
