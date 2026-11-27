@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { EChartsOption } from "echarts";
 import { Chart, category, chartColors, defaultGrid, ink, line, scale, tip, yearMarker } from "./charts";
 import { Export, Metrics, Panel, TimeControl, Toggle, mean, signed } from "./parts";
@@ -20,6 +20,11 @@ export default function Temperature({ data }: { data: TemperatureData }) {
   const rangeRows = range === "All years" ? rows : rows.filter(row => row[0] >= 1970);
   const focus = rows.findIndex(row => String(row[0]) === year);
   const selected = rows[focus];
+  const monthScale = useMemo(() => {
+    const values = rows.flatMap(row => row.slice(2)).filter(value => value != null);
+    return { ...scale(value => value + "°", Math.floor(Math.min(0, ...values) * 2) / 2,
+      Math.ceil(Math.max(0, ...values) * 2) / 2), interval: .5 };
+  }, [rows]);
   const decades = rows.map((_, index) => index < 9 ? null : mean(rows.slice(index - 9, index + 1).map(entry => entry[1])));
   const peak = rows.reduce((a, b) => a[1] >= b[1] ? a : b);
   const calendarStart = Math.min(rows.at(-1)![0] - 15, Math.max(rangeRows[0][0], Math.floor(+year / 10) * 10 - 3));
@@ -48,7 +53,7 @@ export default function Temperature({ data }: { data: TemperatureData }) {
   };
   const monthly: EChartsOption = {
     grid: defaultGrid, tooltip: { ...tip, trigger: "axis", valueFormatter: value => typeof value === "number" ? chartFormat(value) : "Unavailable" },
-    xAxis: category(months), yAxis: scale(value => value + "°", -.6, 1.6),
+    xAxis: category(months), yAxis: monthScale,
     series: [{ type: "bar", name: year, data: selected.slice(2).map(value => ({
       value, itemStyle: { color: value == null ? cold : monthlyColor(value) },
     })) }],

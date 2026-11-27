@@ -162,7 +162,7 @@ function PointTable({ result }: { result: Result }) {
 }
 
 function Analysis({ explore }: { explore: boolean }) {
-  const { project, result, drill, baseline, queryBusy, queryError, selection, choose, dark, updateProject, setNotice, setError } = useWorkspace();
+  const { project, result, drill, baseline, baselineError, captureBaseline, queryBusy, queryError, selection, choose, dark, updateProject, setNotice, setError } = useWorkspace();
   if (!project) return null;
   const { query, dataset, comparison } = project;
   async function addCard() {
@@ -177,7 +177,12 @@ function Analysis({ explore }: { explore: boolean }) {
     } catch (reason) { setError(String(reason)); }
   }
   const summary = selection ? drill?.summary : result?.summary;
-  const difference = summary?.value != null && baseline?.summary.value != null ? summary.value - baseline.summary.value : null;
+  const currentValue = result?.summary.value;
+  const difference = currentValue != null && baseline?.summary.value != null ? currentValue - baseline.summary.value : null;
+  const comparable = comparison && query.aggregate === comparison.aggregate && query.measure === comparison.measure &&
+    query.unit === comparison.unit && query.missing === comparison.missing &&
+    (query.chart === "map" ? comparison.chart === "map" : comparison.chart !== "map" && query.x === comparison.x) &&
+    (query.chart === "histogram") === (comparison.chart === "histogram");
   const percent = difference != null && baseline?.summary.value != null && baseline.summary.value !== 0
     ? 100 * difference / Math.abs(baseline.summary.value) : null;
   return <>
@@ -203,19 +208,20 @@ function Analysis({ explore }: { explore: boolean }) {
       </section>}
       {explore && <section className="panel">
         <div className="section-title"><h2>Compare filter states</h2><div className="button-row">
-          <button onClick={() => updateProject(previous => ({ ...previous, comparison: previous.query }))}>Set current view as baseline</button>
-          {comparison && <button onClick={() => updateProject(previous => ({ ...previous, comparison: undefined }))}>Clear baseline</button>}
+          <button onClick={() => captureBaseline(query)}>Set current view as baseline</button>
+          {comparison && <button onClick={() => captureBaseline()}>Clear baseline</button>}
         </div></div>
+        {comparison && baselineError && <p role="alert">Baseline unavailable. {baselineError}</p>}
         {comparison && baseline && <>
           <div className="comparison">
             <div><h3>Current</h3><p>{describe(query)} · {query.filters.length} filters</p>
-              <Chart query={query} points={selection && drill ? drill.points.filter(p => p.key === selection.key && p.group === selection.group) : result.points} dark={dark} /></div>
+              <Chart query={query} points={result.points} dark={dark} /></div>
             <div><h3>Baseline</h3><p>{describe(comparison)} · {comparison.filters.length} filters</p>
               <Chart query={comparison} points={baseline.points} dark={dark} /></div>
           </div>
-          {query.aggregate === comparison.aggregate && query.measure === comparison.measure && query.unit === comparison.unit
+          {comparable
             ? <p>Change {number(difference)} · {percent === null ? "No percentage available" : number(percent) + "% of baseline magnitude"}</p>
-            : <p>Use the same measure, unit and aggregation to calculate a change.</p>}
+            : <p>Use matching fields, aggregation, units, and missing-value handling to compare totals. Compare maps and histograms with the same chart type.</p>}
         </>}
         {!comparison && <p className="muted">Capture this view, then change the filters to compare totals and charts.</p>}
       </section>}

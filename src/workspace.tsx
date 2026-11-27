@@ -16,6 +16,7 @@ function useWorkspaceState() {
   const [result, setResult] = useState<Result>();
   const [drill, setDrill] = useState<Result>();
   const [baseline, setBaseline] = useState<Result>();
+  const [baselineError, setBaselineError] = useState("");
   const [selection, setSelection] = useState<Selection>();
   const [busy, setBusy] = useState("Opening workspace");
   const [queryBusy, setQueryBusy] = useState(false);
@@ -61,7 +62,7 @@ function useWorkspaceState() {
       pending.current = undefined;
       staged = undefined;
       if (old) void old.close();
-      setSelection(undefined); setResult(undefined); setDrill(undefined); setBaseline(undefined);
+      setSelection(undefined); setResult(undefined); setDrill(undefined); setBaseline(undefined); setBaselineError("");
       setProfiles(profile); setPreview(rows);
       setSnapshot(previous => ({ file, project: {
         version: 1, dataset, query: restore?.query ?? defaultQuery(dataset),
@@ -154,15 +155,24 @@ function useWorkspaceState() {
         try {
           const value = await db.query(dataset, query);
           if (active) setResult(value);
-          const reference = comparison && await db.query(dataset, comparison);
-          if (active) setBaseline(reference);
         } catch (reason) {
-          if (active) { setQueryError(message(reason)); setResult(undefined); setBaseline(undefined); }
+          if (active) { setQueryError(message(reason)); setResult(undefined); }
         } finally { if (active) setQueryBusy(false); }
       })();
     }, 80);
     return () => { active = false; clearTimeout(timer); };
-  }, [dataset, query, comparison]);
+  }, [dataset, query]);
+  useEffect(() => {
+    const db = database.current;
+    if (!db || !dataset || !comparison) return;
+    let active = true;
+    void db.query(dataset, comparison).then(value => {
+      if (active) setBaseline(value);
+    }).catch(reason => {
+      if (active) setBaselineError(message(reason));
+    });
+    return () => { active = false; };
+  }, [dataset, comparison]);
   useEffect(() => {
     const db = database.current;
     if (!db || !dataset || !query || !selection) return;
@@ -178,14 +188,19 @@ function useWorkspaceState() {
   }
   function changeQuery(patch: Partial<Query>) {
     setSelection(undefined); setDrill(undefined);
-    setResult(undefined); setBaseline(undefined);
+    setResult(undefined);
     updateProject(previous => ({ ...previous, query: { ...previous.query, ...patch } }));
   }
+  function captureBaseline(query?: Query) {
+    setBaseline(undefined); setBaselineError("");
+    updateProject(previous => ({ ...previous, comparison: query ? { ...query } : undefined }));
+  }
   function choose(point?: Selection) {
+    if (point?.key === selection?.key && point?.group === selection?.group) return;
     setSelection(point); setDrill(undefined);
   }
   function changeType(name: string, type: Dataset["columns"][number]["type"]) {
-    setSelection(undefined); setDrill(undefined); setResult(undefined);
+    setSelection(undefined); setDrill(undefined); setResult(undefined); setBaseline(undefined); setBaselineError("");
     updateProject(previous => ({ ...previous, dataset: {
       ...previous.dataset, columns: previous.dataset.columns.map(column => column.name === name ? { name, type } : column),
     } }));
@@ -213,7 +228,7 @@ function useWorkspaceState() {
     catch (reason) { setError(message(reason)); }
   }
 
-  return { snapshot, project, profiles, preview, result, drill, baseline, selection, busy, queryBusy,
+  return { snapshot, project, profiles, preview, result, drill, baseline, baselineError, captureBaseline, selection, busy, queryBusy,
     error, queryError, notice, dark, setDark: (value: boolean) => {
       setDark(value); localStorage.setItem("prismlab-theme", value ? "dark" : "light");
     }, setError, setNotice, openDemo, openFile, cancel,

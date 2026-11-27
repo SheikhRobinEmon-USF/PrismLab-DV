@@ -1,10 +1,11 @@
 
-const cacheName = 'prismlab-681ecc18a90a4fed';
 const scope = new URL(self.registration.scope);
+const cachePrefix = 'prismlab-' + scope.pathname + ':';
+const cacheName = cachePrefix + '1370b57daeedd9c2';
 self.addEventListener('install', event => event.waitUntil(self.skipWaiting()));
 self.addEventListener('activate', event => event.waitUntil((async () => {
   for (const key of await caches.keys()) {
-    if (key.startsWith('prismlab-') && key !== cacheName) await caches.delete(key);
+    if (key.startsWith(cachePrefix) && key !== cacheName) await caches.delete(key);
   }
   await self.clients.claim();
 })()));
@@ -16,12 +17,14 @@ self.addEventListener('fetch', event => {
   const relative = url.pathname.slice(scope.pathname.length);
   if (relative === 'offline.js') return;
   event.respondWith((async () => {
-    const cache = await caches.open(cacheName);
-    const cached = await cache.match(request);
-    if (cached && request.mode !== 'navigate') return cached;
+    const cache = await caches.open(cacheName).catch(() => null);
+    const cached = await cache?.match(request);
+    const immutable = relative.startsWith('_next/static/');
+    if (cached && immutable) return cached;
     try {
-      const response = await fetch(request);
-      if (response.ok && response.type === 'basic') await cache.put(request, response.clone()).catch(() => {});
+      const response = await fetch(request, immutable ? undefined : { cache: 'no-cache' });
+      if (cached && response.status >= 500) return cached;
+      if (response.ok && response.type === 'basic') await cache?.put(request, response.clone()).catch(() => {});
       return response;
     } catch (error) {
       if (cached) return cached;

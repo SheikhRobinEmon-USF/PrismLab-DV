@@ -12,6 +12,8 @@ test("retail workspace, linked selection, saved story and export", async ({ page
   await expect(summary).toContainText("Selected value");
   await expect(page.getByRole("heading", { name: "Selected records" })).toBeVisible();
   await expect(page.getByLabel("Matching source records")).toContainText("North");
+  await page.getByRole("button", { name: /^Inspect 2024-01-01/ }).click();
+  await expect(page.getByLabel("Matching source records")).toContainText("North", { timeout: 3000 });
   await page.setViewportSize({ width: 320, height: 900 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
   const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
@@ -23,7 +25,14 @@ test("retail workspace, linked selection, saved story and export", async ({ page
   await page.getByLabel("Value", { exact: true }).fill("South");
   await page.getByRole("button", { name: "Add filter" }).click();
   await expect(summary).toContainText("24");
-  await expect(page.getByText(/% of baseline magnitude/)).toBeVisible();
+  const comparison = page.getByRole("heading", { name: "Compare filter states" }).locator("..").locator("..");
+  const delta = comparison.getByText(/^Change /);
+  await expect(delta).toContainText(/% of baseline magnitude/);
+  const filteredDelta = await delta.innerText();
+  await page.getByRole("button", { name: /^Inspect 2024-01-01/ }).click();
+  await expect(page.getByLabel("Matching source records")).toContainText("South");
+  await expect(delta).toHaveText(filteredDelta);
+  await page.getByRole("button", { name: "Clear selection" }).click();
   await page.getByRole("button", { name: "Add to storyboard" }).click();
   await expect(page.getByText("Chart and evidence added to storyboard.")).toBeVisible();
   await page.getByRole("link", { name: "Storyboard" }).click();

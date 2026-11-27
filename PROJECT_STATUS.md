@@ -1,5 +1,13 @@
 # PrismLab project status
 
+## Maintenance audit
+
+- Selecting the same chart point repeatedly preserves the records and evidence. The baseline query runs independently and its error stays with the comparison. Comparison deltas use complete filter states with compatible fields and missing-value handling.
+- The climate dashboard’s monthly scale covers the full snapshot, including January 1893 at −0.81°C.
+- The offline cache now refreshes mutable files online, keeps offline fallback responses, and versions caches by the full export and deployment scope.
+
+The dependency audit reported zero known vulnerabilities. The release was checked with lint, type checking, the Pages build, 26 SQL and serialization tests, and 26 Chromium tests. New regressions cover repeated selection, whole-view comparisons, invalid baselines, online data refresh, and offline cache fallback.
+
 ## Research collection
 
 PrismLab now opens on a collection of five interactive cases. Grid Atlas moved to `/cases/grid-atlas/`. The new climate, connectivity, mobility and seismic dashboards each include their own visualizations, linked selections, CSV exports, findings, conclusions and source limitations. The dataset studio remains at `/studio/`.

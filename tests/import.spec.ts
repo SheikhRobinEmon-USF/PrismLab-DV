@@ -57,3 +57,48 @@ test("saved retail workspace reloads offline after a connected visit", async ({ 
   await expect(page.getByRole("heading", { name: "Source preview" })).toBeVisible();
   await expect(page.getByText("Retail performance loaded.")).toBeVisible();
 });
+
+test("an invalid saved baseline leaves the current analysis available", async ({ page }) => {
+  await page.goto("studio/datasets/");
+  await page.locator('input[type="file"]').setInputFiles("fixtures/golden.csv");
+  await expect(page.getByText("golden.csv loaded.")).toBeVisible();
+  await page.getByRole("link", { name: "Linked analysis" }).click();
+  await expect(page.getByLabel("Query summary")).toContainText("25");
+  await page.getByRole("button", { name: "Set current view as baseline" }).click();
+  await page.getByRole("link", { name: "Chart composer" }).click();
+  await page.getByRole("combobox", { name: "Measure", exact: true }).selectOption("");
+  await page.getByRole("link", { name: "Datasets" }).click();
+  await page.getByLabel("Type for sales").selectOption("text");
+  await expect(page.getByRole("row", { name: /sales.*text/ })).toBeVisible();
+  await page.getByRole("link", { name: "Linked analysis" }).click();
+  const summary = page.getByLabel("Query summary");
+  await expect(summary).toContainText("Count of records", { timeout: 5000 });
+  await expect(page.getByRole("alert").filter({ hasText: "Baseline unavailable" })).toBeVisible();
+  await page.getByRole("button", { name: "Clear baseline" }).click();
+  await expect(summary).toContainText("Count of records");
+  await expect(page.getByRole("alert").filter({ hasText: "Baseline unavailable" })).toHaveCount(0);
+});
+
+test("the offline cache refreshes mutable research data while connected", async ({ page, context }) => {
+  await page.goto("cases/warming/");
+  await expect(page.getByLabel("Case metrics")).toBeVisible();
+  await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+  const path = new URL("../../research/warming.json", page.url()).href;
+  const name = await page.evaluate(async path => {
+    await fetch(path);
+    const names = await caches.keys();
+    const name = names.find(name => name.startsWith("prismlab-"));
+    if (!name) throw new Error("PrismLab cache unavailable");
+    const cache = await caches.open(name);
+    await cache.put(path, new Response(JSON.stringify({ rows: [] })));
+    return name;
+  }, path);
+  const rows = async () => page.evaluate(async path => {
+    const response = await fetch(path);
+    return (await response.json()).rows.length as number;
+  }, path);
+  expect(await rows()).toBe(146);
+  expect(await page.evaluate(async ({ name, path }) => !!(await (await caches.open(name)).match(path)), { name, path })).toBe(true);
+  await context.setOffline(true);
+  expect(await rows()).toBe(146);
+});
