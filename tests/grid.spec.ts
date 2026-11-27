@@ -5,7 +5,7 @@ import { expect, test } from "@playwright/test";
 test("dashboard links the year, economy, chart, map, and export", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
-  await page.goto("./");
+  await page.goto("cases/grid-atlas/");
   await expect(page.getByRole("heading", { name: "The global power transition." })).toBeVisible();
   const metrics = page.getByLabel("Electricity metrics");
   await expect(metrics).toContainText("31,984");
@@ -56,7 +56,7 @@ test("dashboard links the year, economy, chart, map, and export", async ({ page 
 });
 
 test("playback, missing years and accessible methodology", async ({ page }) => {
-  await page.goto("./");
+  await page.goto("cases/grid-atlas/");
   const year = page.getByRole("combobox", { name: "Year", exact: true });
   await year.selectOption("2023");
   await page.getByRole("button", { name: "Play timeline" }).click();
@@ -82,7 +82,7 @@ for (const width of [320, 768, 1440]) {
   test("dashboard has no horizontal overflow and passes axe at " + width, async ({ page }) => {
     await page.setViewportSize({ width, height: 960 });
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto("./");
+    await page.goto("cases/grid-atlas/");
     await expect(page.getByLabel("Ranked economies")).toBeVisible();
     await page.keyboard.press("Tab");
     await expect(page.getByRole("link", { name: "Skip to dashboard" })).toBeFocused();

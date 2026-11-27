@@ -1,5 +1,5 @@
 
-const cacheName = 'prismlab-0e97d40b0fa85553';
+const cacheName = 'prismlab-681ecc18a90a4fed';
 const scope = new URL(self.registration.scope);
 self.addEventListener('install', event => event.waitUntil(self.skipWaiting()));
 self.addEventListener('activate', event => event.waitUntil((async () => {

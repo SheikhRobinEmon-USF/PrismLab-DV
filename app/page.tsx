@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import Dashboard from "../src/grid/dashboard";
+import ResearchHub from "../src/research/hub";
 
 export const metadata: Metadata = {
-  title: "Grid Atlas — The global power transition",
-  description: "An interactive dashboard of electricity generation, the rise of clean power, and changes in the global energy mix.",
+  title: "PrismLab — Interactive research",
+  description: "Five interactive case studies about electricity, climate, connectivity, transit and earthquakes, built with open data.",
 };
 
-export default function Page() { return <Dashboard />; }
+export default function Page() { return <ResearchHub />; }

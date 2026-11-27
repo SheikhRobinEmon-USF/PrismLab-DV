@@ -245,7 +245,7 @@ export default function Dashboard() {
       <div className="grid-layout grid-header-inner">
         <a href="#overview" className="grid-brand"><span><Zap size={20} fill="currentColor" aria-hidden /></span><strong>Grid Atlas</strong></a>
         <nav aria-label="Dashboard navigation">
-          <a href="#overview">Overview</a><a href="#explore">Explore</a><button type="button" onClick={openMethod}>Methodology</button>
+          <Link href="/">All cases</Link><a href="#explore">Explore</a><button type="button" onClick={openMethod}>Methodology</button>
         </nav>
         <button type="button" className="grid-source-button" onClick={openMethod}><CircleHelp size={16} aria-hidden /> <span>Data sources</span></button>
       </div>
@@ -297,14 +297,14 @@ export default function Dashboard() {
       </div>
       {leadingGain && <aside className="grid-insight">
         <span className="grid-insight-icon"><Zap size={22} fill="currentColor" aria-hidden /></span>
-        <div><h2>{leadingGain.name} drove the biggest gain in {recentYear}</h2>
-          <p>Globally, {leadingGain.name.toLowerCase()} added {whole(leadingGain.value)} TWh. Clean generation changed by {signed(globalCleanGrowth, 0)} TWh and fossil generation by {signed(globalFossilDelta, 0)} TWh.</p></div>
+        <div><h2>Conclusion · {leadingGain.name} drove the biggest gain in {recentYear}</h2>
+          <p>Globally, {leadingGain.name.toLowerCase()} added {whole(leadingGain.value)} TWh. Clean generation changed by {signed(globalCleanGrowth, 0)} TWh and fossil generation by {signed(globalFossilDelta, 0)} TWh. Fossil generation still supplied {number(percent(worldLatest[3], worldLatest[1]))}% of the total.</p></div>
         <a href={REPORT} target="_blank" rel="noreferrer">Read Ember’s analysis <ArrowUpRight size={17} aria-hidden /></a>
       </aside>}
     </main>
     <footer className="grid-layout grid-footer">
       <span>Grid Atlas · A PrismLab project</span><a href={SOURCE} target="_blank" rel="noreferrer">Data by Ember · CC BY 4.0 <ArrowUpRight size={14} aria-hidden /></a>
-      <Link href="/studio/">Open dataset studio <ArrowRight size={15} aria-hidden /></Link>
+      <Link href="/cases/warming/">Next case · A hotter planet <ArrowRight size={15} aria-hidden /></Link>
     </footer>
     <dialog ref={dialog} className="grid-dialog" aria-labelledby="grid-dialog-title" onClick={event => {
       if (event.target === event.currentTarget) dialog.current?.close();

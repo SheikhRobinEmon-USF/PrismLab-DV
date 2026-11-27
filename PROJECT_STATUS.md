@@ -1,6 +1,16 @@
 # PrismLab project status
 
-Grid Atlas is the home page. It is an interactive research dashboard based on Ember’s annual electricity generation data, with a linked trend chart, generation mix, map, rankings, annual change chart, timeline playback, data documentation and source CSV export. The dataset studio remains at `/studio/`.
+## Research collection
+
+PrismLab now opens on a collection of five interactive cases. Grid Atlas moved to `/cases/grid-atlas/`. The new climate, connectivity, mobility and seismic dashboards each include their own visualizations, linked selections, CSV exports, findings, conclusions and source limitations. The dataset studio remains at `/studio/`.
+
+The production export passed lint, type checking, 26 SQL and serialization tests and 24 Chromium browser tests. Browser coverage includes navigation across all five cases, year and month selection, chart filtering, CSV export, earthquake event selection, and 320-pixel keyboard and axe checks for the collection and all four new cases.
+
+[Published collection](https://sheikhrobinemon-usf.github.io/PrismLab-DV/) · [Source data and reproducibility](docs/case-research.md)
+
+## Grid Atlas
+
+Grid Atlas is an interactive research dashboard based on Ember’s annual electricity generation data, with a linked trend chart, generation mix, map, rankings, annual change chart, timeline playback, data documentation and source CSV export. The dataset studio remains at `/studio/`.
 
 The Grid Atlas production build and all 14 Chromium tests passed locally and in [GitHub CI](https://github.com/SheikhRobinEmon-USF/PrismLab-DV/actions/runs/45910828580). The dashboard tests cover playback, year picking directly on the trend, economy and region filtering, the map, CSV export, a keyboard-accessible methodology dialog, and axe checks at widths of 320, 768 and 1440 pixels.
 
